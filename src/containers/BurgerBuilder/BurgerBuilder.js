@@ -3,6 +3,8 @@ import React, { Component } from 'react';
 import Aux from '../../hoc/Auxiliary';
 import Burger from '../../components/Burger/Burger';
 import BuildControls from '../../components/Burger/BuildControls/BuildControls';
+import Modal from '../../components/UI/Modal/Modal';
+import OrderSummary from '../../components/Burger/OrderSummary/OrderSummary';
 
 const INGREDIENT_PRICES = {
     salad: 0.5,
@@ -26,7 +28,25 @@ class BurgerBuilder extends Component {
             cheese: 0,
             meat: 0
         },
-        totalPrice: 4   //Base price
+        totalPrice: 4,          //Base price
+        purchasable: false,     //For enable or disable Order Now button
+        purchasing: false
+    }
+
+    //!TODO: Adding method to update purchase state
+    updatePurchaseState(ingredients) {
+        // const ingredients = {
+        //     ...this.state.ingredients
+        // };
+        const sum = Object.keys(ingredients)    //!NOTE: use Object.keys(obj.) to enable array map function
+            .map(igKey => {
+                return ingredients[igKey];
+            })
+            .reduce((accumulator, element) => {
+                return accumulator + element;
+            }, 0);
+
+        this.setState({ purchasable: sum > 0 });
     }
 
     //!TODO: Adding methods to add and remove ingredients
@@ -47,6 +67,9 @@ class BurgerBuilder extends Component {
 
         //!NOTE: update the state
         this.setState({ totalPrice: newPrice, ingredients: updatedIngredients });
+
+        //!NOTE: run update purchase state
+        this.updatePurchaseState(updatedIngredients);
     }
 
     removeIngredientHandler = type => {
@@ -71,6 +94,28 @@ class BurgerBuilder extends Component {
 
         //!NOTE: update the state
         this.setState({ totalPrice: newPrice, ingredients: updatedIngredients });
+
+        //!NOTE: run update purchase state
+        this.updatePurchaseState(updatedIngredients);
+
+    }
+
+    //!NOTE: The below code causes errors as the function is not using arrow -> issue with 'this' keyword
+    // purchaseHandler() {
+    //     this.setState({ purchasing: true });
+    // }
+
+    //!NOTE: change to arrow function
+    purchaseHandler = () => {
+        this.setState({ purchasing: true });
+    }
+
+    purchaseCancelHandler = () => {
+        this.setState({ purchasing: false });
+    }
+
+    purchaseContinueHandler = () => {
+        alert('You continued!');
     }
 
     render() {
@@ -84,12 +129,24 @@ class BurgerBuilder extends Component {
 
         return (
             <Aux>
+                <Modal show={this.state.purchasing} modalClosed={this.purchaseCancelHandler}>
+                    <OrderSummary
+                        ingredients={this.state.ingredients}
+                        purchaseCancelled={this.purchaseCancelHandler}
+                        purchaseContinued={this.purchaseContinueHandler}
+                        price={this.state.totalPrice}
+                    />
+                </Modal> {/*NOTE: A model for order summary */}
+
                 <Burger ingredients={this.state.ingredients} />
+
                 <BuildControls
                     ingredientAdded={this.addIngredientHandler}
                     ingredientRemoved={this.removeIngredientHandler}
                     disabled={disabledInfo}
                     price={this.state.totalPrice}
+                    purchasable={this.state.purchasable}
+                    ordered={this.purchaseHandler}
                 />
             </Aux>
         );
